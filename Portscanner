@@ -1,47 +1,60 @@
 #importing options/socket/thread
 import optparse
 import sys
+#from socket import all
 from socket import *
+#from threading import all
 from threading import *
-
+#set threading to
 screenLock = Semaphore(value=1)
 
-#create socket connection to specific host / port 
+#define connScan for target host and target port
 def connScan(tgtHost, tgtPort):
     try:
+        #creat a Internet Domain socket connection
         connSkt = socket(AF_INET, SOCK_STREAM)
+        #connect to specified target and host port
         connSkt.connect((tgtHost, tgtPort))
+        #send hello string to test port connection
         connSkt.send('hello\r\n')
-#        results = connSkt.recv(100)
+        #results = connSkt.recv(100)
         screenLock.acquire()
+        #print target port is open
         print( "[+]" + str(tgtPort) + "/tcp open")
     except:
         screenLock.acquire()
+        #print target port is closed
         print( "[-]" + str(tgtPort) + "/tcp closed")
     finally:
+        #release thread and close socket connection to target
         screenLock.release()
         connSkt.close()
 
 #get host status and port status
 def portScan(tgtHost, tgtPorts):
     try:
+        #get targethost IP address by name
         tgtIP = gethostbyname(tgtHost)
     except:
+        #if host does not exist, print unknown hosts
         print( "[-] Cannot resolve" + tgtHost + ": Unknown hosts")
         return
     
     try:
+        #get targethost name by IP address
         tgtName = gethostbyaddr(tgtIP)
+        #print results for targethost
         print( "\n[+] Scan Results for: "+ tgtName[0])
     except:
         print("\n[+] Scan Results for: "+ tgtIP)
 
+    #set the default time out to 1 
     setdefaulttimeout(1)
     for tgtPort in tgtPorts:
         t = Thread(target=connScan, args=(tgtHost, int(tgtPort)))
         t.start()
 
-#portscan execution with help option
+#portscan execution with help options
 def Main(argv):
     
     parser = optparse.OptionParser('usage %prog -H <target hots> ' + '-p <target port>')
